@@ -1,0 +1,10 @@
+apiVersion: accountpooloperator.openshift.io/v1
+kind: AccountPool
+metadata:
+  name: "example-pool"
+spec:
+  provider: "AWS"
+  credentials:
+    secret_access_key: "1234"
+    access_key_id: "4567"
+  pool_size: 3

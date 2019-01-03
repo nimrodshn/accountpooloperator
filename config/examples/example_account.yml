@@ -1,0 +1,8 @@
+apiVersion: accountpooloperator.openshift.io/v1
+kind: AWSAccount
+metadata:
+  name: "example-account"
+spec:
+  account_name: "example_account"
+  email: "test@test.com"
+  status: "pending"
