@@ -23,9 +23,9 @@ import (
 	sync "sync"
 	time "time"
 
-	versioned "gitlab.cee.redhat.com/service/uhc-clusters-service/pkg/accountpooloperator/pkg/client/clientset/versioned"
-	accountpooloperator "gitlab.cee.redhat.com/service/uhc-clusters-service/pkg/accountpooloperator/pkg/client/informers/externalversions/accountpooloperator"
-	internalinterfaces "gitlab.cee.redhat.com/service/uhc-clusters-service/pkg/accountpooloperator/pkg/client/informers/externalversions/internalinterfaces"
+	versioned "github.com/nimrodshn/accountpooloperator/pkg/client/clientset/versioned"
+	accountpooloperator "github.com/nimrodshn/accountpooloperator/pkg/client/informers/externalversions/accountpooloperator"
+	internalinterfaces "github.com/nimrodshn/accountpooloperator/pkg/client/informers/externalversions/internalinterfaces"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"

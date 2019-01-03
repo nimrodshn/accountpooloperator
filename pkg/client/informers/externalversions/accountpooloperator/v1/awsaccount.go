@@ -21,10 +21,10 @@ package v1
 import (
 	time "time"
 
-	accountpooloperatorv1 "gitlab.cee.redhat.com/service/uhc-clusters-service/pkg/accountpooloperator/pkg/apis/accountpooloperator/v1"
-	versioned "gitlab.cee.redhat.com/service/uhc-clusters-service/pkg/accountpooloperator/pkg/client/clientset/versioned"
-	internalinterfaces "gitlab.cee.redhat.com/service/uhc-clusters-service/pkg/accountpooloperator/pkg/client/informers/externalversions/internalinterfaces"
-	v1 "gitlab.cee.redhat.com/service/uhc-clusters-service/pkg/accountpooloperator/pkg/client/listers/accountpooloperator/v1"
+	accountpooloperatorv1 "github.com/nimrodshn/accountpooloperator/pkg/apis/accountpooloperator/v1"
+	versioned "github.com/nimrodshn/accountpooloperator/pkg/client/clientset/versioned"
+	internalinterfaces "github.com/nimrodshn/accountpooloperator/pkg/client/informers/externalversions/internalinterfaces"
+	v1 "github.com/nimrodshn/accountpooloperator/pkg/client/listers/accountpooloperator/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	watch "k8s.io/apimachinery/pkg/watch"

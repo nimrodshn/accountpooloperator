@@ -19,7 +19,7 @@ limitations under the License.
 package fake
 
 import (
-	v1 "gitlab.cee.redhat.com/service/uhc-clusters-service/pkg/accountpooloperator/pkg/client/clientset/versioned/typed/accountpooloperator/v1"
+	v1 "github.com/nimrodshn/accountpooloperator/pkg/client/clientset/versioned/typed/accountpooloperator/v1"
 	rest "k8s.io/client-go/rest"
 	testing "k8s.io/client-go/testing"
 )

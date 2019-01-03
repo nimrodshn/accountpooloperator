@@ -19,8 +19,8 @@ limitations under the License.
 package accountpooloperator
 
 import (
-	v1 "gitlab.cee.redhat.com/service/uhc-clusters-service/pkg/accountpooloperator/pkg/client/informers/externalversions/accountpooloperator/v1"
-	internalinterfaces "gitlab.cee.redhat.com/service/uhc-clusters-service/pkg/accountpooloperator/pkg/client/informers/externalversions/internalinterfaces"
+	v1 "github.com/nimrodshn/accountpooloperator/pkg/client/informers/externalversions/accountpooloperator/v1"
+	internalinterfaces "github.com/nimrodshn/accountpooloperator/pkg/client/informers/externalversions/internalinterfaces"
 )
 
 // Interface provides access to each of this group's versions.

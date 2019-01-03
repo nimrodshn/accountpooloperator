@@ -19,7 +19,7 @@ limitations under the License.
 package scheme
 
 import (
-	accountpooloperatorv1 "gitlab.cee.redhat.com/service/uhc-clusters-service/pkg/accountpooloperator/pkg/apis/accountpooloperator/v1"
+	accountpooloperatorv1 "github.com/nimrodshn/accountpooloperator/pkg/apis/accountpooloperator/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"

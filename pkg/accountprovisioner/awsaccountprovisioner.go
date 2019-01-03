@@ -28,9 +28,9 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/organizations"
 	// nolint
-	accountpool "gitlab.cee.redhat.com/service/uhc-clusters-service/pkg/accountpooloperator/pkg/apis/accountpooloperator/v1"
+	accountpool "github.com/nimrodshn/accountpooloperator/pkg/apis/accountpooloperator/v1"
 	// nolint
-	clientset "gitlab.cee.redhat.com/service/uhc-clusters-service/pkg/accountpooloperator/pkg/client/clientset/versioned"
+	clientset "github.com/nimrodshn/accountpooloperator/pkg/client/clientset/versioned"
 )
 
 var (

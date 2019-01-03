@@ -24,11 +24,11 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	//nolint
-	accountpool "gitlab.cee.redhat.com/service/uhc-clusters-service/pkg/accountpooloperator/pkg/apis/accountpooloperator/v1"
+	accountpool "github.com/nimrodshn/accountpooloperator/pkg/apis/accountpooloperator/v1"
 	//nolint
-	fakeclient "gitlab.cee.redhat.com/service/uhc-clusters-service/pkg/accountpooloperator/pkg/client/clientset/versioned/fake"
+	fakeclient "github.com/nimrodshn/accountpooloperator/pkg/client/clientset/versioned/fake"
 	// nolint
-	informerfactory "gitlab.cee.redhat.com/service/uhc-clusters-service/pkg/accountpooloperator/pkg/client/informers/externalversions"
+	informerfactory "github.com/nimrodshn/accountpooloperator/pkg/client/informers/externalversions"
 )
 
 var (

@@ -19,9 +19,9 @@ package utils
 import (
 	"testing"
 	//nolint
-	fakeclient "gitlab.cee.redhat.com/service/uhc-clusters-service/pkg/accountpooloperator/pkg/client/clientset/versioned/fake"
+	fakeclient "github.com/nimrodshn/accountpooloperator/pkg/client/clientset/versioned/fake"
 	//nolint
-	accountpool "gitlab.cee.redhat.com/service/uhc-clusters-service/pkg/accountpooloperator/pkg/apis/accountpooloperator/v1"
+	accountpool "github.com/nimrodshn/accountpooloperator/pkg/apis/accountpooloperator/v1"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )

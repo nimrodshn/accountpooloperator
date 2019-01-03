@@ -18,7 +18,7 @@ package accountprovisioner
 
 import (
 	// nolint
-	accountpool "gitlab.cee.redhat.com/service/uhc-clusters-service/pkg/accountpooloperator/pkg/apis/accountpooloperator/v1"
+	accountpool "github.com/nimrodshn/accountpooloperator/pkg/apis/accountpooloperator/v1"
 )
 
 type AccountProvisioner interface {

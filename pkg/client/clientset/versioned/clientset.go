@@ -19,7 +19,7 @@ limitations under the License.
 package versioned
 
 import (
-	accountpooloperatorv1 "gitlab.cee.redhat.com/service/uhc-clusters-service/pkg/accountpooloperator/pkg/client/clientset/versioned/typed/accountpooloperator/v1"
+	accountpooloperatorv1 "github.com/nimrodshn/accountpooloperator/pkg/client/clientset/versioned/typed/accountpooloperator/v1"
 	discovery "k8s.io/client-go/discovery"
 	rest "k8s.io/client-go/rest"
 	flowcontrol "k8s.io/client-go/util/flowcontrol"

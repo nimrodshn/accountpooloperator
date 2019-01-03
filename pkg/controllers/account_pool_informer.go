@@ -26,13 +26,13 @@ import (
 	"k8s.io/client-go/tools/cache"
 
 	// nolint
-	informers "gitlab.cee.redhat.com/service/uhc-clusters-service/pkg/accountpooloperator/pkg/client/informers/externalversions/accountpooloperator/v1"
+	informers "github.com/nimrodshn/accountpooloperator/pkg/client/informers/externalversions/accountpooloperator/v1"
 	// nolint
-	accountpool "gitlab.cee.redhat.com/service/uhc-clusters-service/pkg/accountpooloperator/pkg/apis/accountpooloperator/v1"
+	accountpool "github.com/nimrodshn/accountpooloperator/pkg/apis/accountpooloperator/v1"
 	// nolint
-	clientset "gitlab.cee.redhat.com/service/uhc-clusters-service/pkg/accountpooloperator/pkg/client/clientset/versioned"
+	clientset "github.com/nimrodshn/accountpooloperator/pkg/client/clientset/versioned"
 	// nolint
-	informerfactory "gitlab.cee.redhat.com/service/uhc-clusters-service/pkg/accountpooloperator/pkg/client/informers/externalversions"
+	informerfactory "github.com/nimrodshn/accountpooloperator/pkg/client/informers/externalversions"
 )
 
 // the number of worker threads.

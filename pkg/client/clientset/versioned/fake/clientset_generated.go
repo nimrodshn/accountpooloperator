@@ -19,9 +19,9 @@ limitations under the License.
 package fake
 
 import (
-	clientset "gitlab.cee.redhat.com/service/uhc-clusters-service/pkg/accountpooloperator/pkg/client/clientset/versioned"
-	accountpooloperatorv1 "gitlab.cee.redhat.com/service/uhc-clusters-service/pkg/accountpooloperator/pkg/client/clientset/versioned/typed/accountpooloperator/v1"
-	fakeaccountpooloperatorv1 "gitlab.cee.redhat.com/service/uhc-clusters-service/pkg/accountpooloperator/pkg/client/clientset/versioned/typed/accountpooloperator/v1/fake"
+	clientset "github.com/nimrodshn/accountpooloperator/pkg/client/clientset/versioned"
+	accountpooloperatorv1 "github.com/nimrodshn/accountpooloperator/pkg/client/clientset/versioned/typed/accountpooloperator/v1"
+	fakeaccountpooloperatorv1 "github.com/nimrodshn/accountpooloperator/pkg/client/clientset/versioned/typed/accountpooloperator/v1/fake"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/discovery"

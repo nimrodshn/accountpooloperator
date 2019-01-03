@@ -22,7 +22,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 
 	// nolint
-	accountpool "gitlab.cee.redhat.com/service/uhc-clusters-service/pkg/accountpooloperator/pkg/apis/accountpooloperator"
+	accountpool "github.com/nimrodshn/accountpooloperator/pkg/apis/accountpooloperator"
 )
 
 // SchemeGroupVersion is group version used to register these objects

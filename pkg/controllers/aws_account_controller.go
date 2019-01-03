@@ -21,21 +21,21 @@ import (
 	"time"
 
 	// nolint
-	accountpool "gitlab.cee.redhat.com/service/uhc-clusters-service/pkg/accountpooloperator/pkg/apis/accountpooloperator/v1"
+	accountpool "github.com/nimrodshn/accountpooloperator/pkg/apis/accountpooloperator/v1"
 	// nolint
-	clientset "gitlab.cee.redhat.com/service/uhc-clusters-service/pkg/accountpooloperator/pkg/client/clientset/versioned"
+	clientset "github.com/nimrodshn/accountpooloperator/pkg/client/clientset/versioned"
 	// nolint
-	informers "gitlab.cee.redhat.com/service/uhc-clusters-service/pkg/accountpooloperator/pkg/client/informers/externalversions/accountpooloperator/v1"
+	informers "github.com/nimrodshn/accountpooloperator/pkg/client/informers/externalversions/accountpooloperator/v1"
 	// nolint
-	listers "gitlab.cee.redhat.com/service/uhc-clusters-service/pkg/accountpooloperator/pkg/client/listers/accountpooloperator/v1"
+	listers "github.com/nimrodshn/accountpooloperator/pkg/client/listers/accountpooloperator/v1"
 	// nolint
-	informerfactory "gitlab.cee.redhat.com/service/uhc-clusters-service/pkg/accountpooloperator/pkg/client/informers/externalversions"
+	informerfactory "github.com/nimrodshn/accountpooloperator/pkg/client/informers/externalversions"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 
 	"github.com/golang/glog"
-	"gitlab.cee.redhat.com/service/uhc-clusters-service/pkg/accountpooloperator/pkg/accountprovisioner"
+	"github.com/nimrodshn/accountpooloperator/pkg/accountprovisioner"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/selection"

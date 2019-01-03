@@ -21,7 +21,7 @@ package externalversions
 import (
 	"fmt"
 
-	v1 "gitlab.cee.redhat.com/service/uhc-clusters-service/pkg/accountpooloperator/pkg/apis/accountpooloperator/v1"
+	v1 "github.com/nimrodshn/accountpooloperator/pkg/apis/accountpooloperator/v1"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
 	cache "k8s.io/client-go/tools/cache"
 )
