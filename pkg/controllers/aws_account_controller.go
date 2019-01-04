@@ -116,16 +116,7 @@ func NewAWSAccountController(
 
 	awsaccountinformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: func(new interface{}) {
-			newAccount := new.(*accountpool.AWSAccount)
-			glog.Infof("processing new account: %v", newAccount.Spec.AccountName)
-			pool, err := controller.retrievePoolFromAccount(newAccount)
-			if err != nil {
-				glog.Errorf("Could not retreieve account pool: %s", newAccount.Labels["pool_name"])
-			}
-			go controller.accountprovisioner.ProvisionAccount(
-				newAccount,
-				pool.Spec.Credentials,
-				stopCh)
+			controller.addAccountHandler(new)
 		},
 		UpdateFunc: func(old, new interface{}) {
 			controller.enqueueAccount(new)
@@ -147,6 +138,21 @@ func (c *AWSAccountController) enqueueAccount(obj interface{}) {
 	c.workqueue.AddRateLimited(key)
 }
 
+func (c *AWSAccountController) addAccountHandler(new interface{}) {
+	newAccount := new.(*accountpool.AWSAccount)
+	glog.Infof("processing new account: %v", newAccount.Spec.AccountName)
+	pool, err := c.retrievePoolFromAccount(newAccount)
+	if err != nil {
+		glog.Errorf("Could not retreieve account pool: %s", newAccount.Labels["pool_name"])
+	}
+	// run provision account job.
+	go c.accountprovisioner.ProvisionAccount(
+		newAccount,
+		pool.Spec.Credentials,
+		c.stopCh)
+}
+
+// Run runs the workers processing events from infromers cache.
 func (c *AWSAccountController) Run(threadiness int) error {
 	defer utilruntime.HandleCrash()
 	defer c.workqueue.ShutDown() // makes sure there are no dangling goroutines
