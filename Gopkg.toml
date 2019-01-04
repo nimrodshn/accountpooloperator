@@ -1,0 +1,54 @@
+required = [
+  "k8s.io/code-generator/cmd/client-gen",
+  "k8s.io/code-generator/cmd/conversion-gen",
+  "k8s.io/code-generator/cmd/deepcopy-gen",
+  "k8s.io/code-generator/cmd/defaulter-gen",
+  "k8s.io/code-generator/cmd/informer-gen",
+  "k8s.io/code-generator/cmd/lister-gen",
+]
+
+# This is needed to avoid a crash in `dep ensure`, see here for more details:
+# https://github.com/golang/dep/issues/1799
+[[override]]
+  name = "gopkg.in/fsnotify.v1"
+  source = "gopkg.in/fsnotify/fsnotify.v1"
+
+# Reduce the size of the `vendor` directory excluding unused packages, tests and
+# other files that aren't needed.
+[prune]
+  go-tests = true
+  non-go = true
+  unused-packages = true
+
+  [[prune.project]]
+    name = "k8s.io/code-generator"
+    non-go = false
+    unused-packages = false
+
+[[constraint]]
+  name = "github.com/golang/glog"
+  revision = "23def4e6c14b4da8ac2ed8007337bc5eb5007998"
+
+[[constraint]]
+  name = "k8s.io/client-go"
+  version = "v8.0.0"
+
+[[override]]
+  name = "k8s.io/api"
+  version = "kubernetes-1.11.4"
+
+[[override]]
+  name = "k8s.io/apiserver"
+  version = "kubernetes-1.11.4"
+
+[[override]]
+  name = "k8s.io/apimachinery"
+  version = "kubernetes-1.11.4"
+
+[[override]]
+  name = "k8s.io/kubernetes"
+  version = "kubernetes-1.11.4"
+
+[[override]]
+  name = "k8s.io/code-generator"
+  version = "kubernetes-1.11.4"

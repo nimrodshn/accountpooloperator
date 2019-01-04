@@ -44,12 +44,12 @@ const resyncPeriod = time.Minute * 10
 type AccountPoolInformerFactory struct {
 	factory             informerfactory.SharedInformerFactory
 	awsaccountclientset clientset.Interface
-	stopCh              chan struct{}
+	stopCh              <-chan struct{}
 	controllerMap       map[string]*AWSAccountController
 }
 
 func NewAccountPoolInformerFactory(config *rest.Config,
-	stopCh chan struct{}) (*AccountPoolInformerFactory, error) {
+	stopCh <-chan struct{}) (*AccountPoolInformerFactory, error) {
 	clientset, err := clientset.NewForConfig(config)
 	if err != nil {
 		return nil, err
