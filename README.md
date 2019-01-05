@@ -40,6 +40,14 @@ kubectl label --overwrite awsaccount someaccount "available = false"
 ```
 Or delete the awsaccount CRD altogether.
 
-**Please note:** deleting the CRD does **NOT** delete the provisioned accounts - that can only be done manually in the AWS console.
+**Please note:** deleting the CRD does **NOT** delete the provisioned AWS accounts along with any artifacts associated with them - that can only be done manually using the AWS console.
+
+## Deploying accountpooloperator
+Accountpooloperator can built and deployed using the following methods:
+
+1. The recommended way is to run Accountpooloperator as a pod inside a kubernetes cluster using the deployment file, by running - `kubectl create -f deployment.yml`.
+2. Accountpooloperator can also be built and run as a binary using the `make` command.
+3. A third way is to run it as docker container by running `make image` followed by `docker run nimrodshn/accountpoolopreator:latest --kubeconfig=...`.
+
 
 
