@@ -79,6 +79,7 @@ func main() {
 		panic("An error occurred while trying to create the account informer factory.")
 	}
 
+	// Create the controller and run - this call is non-blocking
 	accountControllerFactory.CreateControllerAndRun()
 
 	accountPoolInformerFactory, err := controllers.NewAccountPoolInformerFactory(
@@ -88,6 +89,8 @@ func main() {
 		panic("An error occurred while trying to create the account informer factory.")
 	}
 
+	// Create the controller and run - this call is non-blocking
 	accountPoolInformerFactory.CreateInformerAndRun()
 
+	<-stopCh
 }

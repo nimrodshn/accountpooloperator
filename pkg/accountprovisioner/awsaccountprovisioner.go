@@ -202,7 +202,7 @@ func (a *AWSAccountProvisioner) handleErrors(
 				return
 			}
 			// TODO: Possibly contact SRE-P team here to check the error
-			fmt.Printf("Some error occured while trying to create account %v: %v", account.Name, err)
+			fmt.Printf("Some error occured while trying to create account %v: %v\n", account.Name, err)
 		case <-stopCh:
 			return
 		}
