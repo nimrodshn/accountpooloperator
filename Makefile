@@ -25,5 +25,5 @@ clean:
 	rm accountpooloperator
 
 image:
-	docker build -t nimrodshn/accountpooloperator:latest
+	docker build . -t nimrodshn/accountpooloperator:latest
 

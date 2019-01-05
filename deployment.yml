@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: accountpooloperator-deployment
+  labels:
+    app: accountpooloperator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: accountpooloperator
+  template:
+    metadata:
+      labels:
+        app: accountpooloperator
+    spec:
+      containers:
+      - name: accountpooloperator
+        image: nimrodshn/accountpooloperator

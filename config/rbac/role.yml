@@ -4,5 +4,8 @@ metadata:
   name: "accountpooloperator-role"
 rules:
 - apiGroups: ["accountpooloperator.openshift.io"] 
-  resources: ["accountpools, awsaccounts"]
+  resources: ["awsaccounts"]
+  verbs: ["get", "watch", "list", "create", "patch", "update"]
+- apiGroups: ["accountpooloperator.openshift.io"]
+  resources: ["accountpools"]
   verbs: ["get", "watch", "list", "create", "patch", "update"]
