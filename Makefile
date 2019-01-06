@@ -27,3 +27,6 @@ clean:
 image:
 	docker build . -t nimrodshn/accountpooloperator:latest
 
+generate:
+	go generate ./pkg/... ./cmd/...
+

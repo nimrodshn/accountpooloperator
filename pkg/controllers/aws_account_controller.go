@@ -213,7 +213,7 @@ func (c *AWSAccountController) processNextWorkItem() bool {
 			return nil
 		}
 
-		if err := c.syncAccountHandler(key); err != nil {
+		if err := c.reconcileAccounts(key); err != nil {
 			// Put the item back on the workqueue to handle any transient errors.
 			c.workqueue.AddRateLimited(key)
 			return fmt.Errorf("error syncing '%s': %s, requeuing", key, err.Error())
@@ -233,10 +233,10 @@ func (c *AWSAccountController) processNextWorkItem() bool {
 	return true
 }
 
-// syncAccountHandler receives an event (adding, deleting, updating of an accout) and tries to
+// reconcileAccounts receives an event (adding, deleting, updating of an accout) and tries to
 // reconcile the current list of available accounts with respect to the desired pool size
 // as described by the AccountPool.
-func (c *AWSAccountController) syncAccountHandler(key string) (err error) {
+func (c *AWSAccountController) reconcileAccounts(key string) (err error) {
 	// Convert the namespace/name string into a distinct namespace and name
 	_, name, err := cache.SplitMetaNamespaceKey(key)
 	if err != nil {
@@ -244,29 +244,20 @@ func (c *AWSAccountController) syncAccountHandler(key string) (err error) {
 		return
 	}
 
+	// Retrieve the account from etcd.
 	account, err := c.awsaccountlister.AWSAccounts(metav1.NamespaceDefault).Get(name)
 	if err != nil {
 		utilruntime.HandleError(fmt.Errorf("could not get account with name: %s", name))
 		return
 	}
 
-	// make the selector for current available in the given the associated account pool.
-	availableRequirement, err := labels.NewRequirement("available", selection.Equals, []string{"true"})
-	if err != nil {
-		utilruntime.HandleError(fmt.Errorf("invalid requirement %v", err))
-		return
-	}
-
-	poolRequirement, err := labels.NewRequirement("pool_name", selection.Equals, []string{account.Labels["pool_name"]})
-	if err != nil {
-		utilruntime.HandleError(fmt.Errorf("invalid requirement %v", err))
-		return
-	}
 	// List the account according to the selectors.
 	namespace := metav1.NamespaceDefault
+	poolName := account.Labels["pool_name"]
+	selectorRequirements := c.poolSelectorRequirements(poolName)
 	availableAccounts, err := c.awsaccountlister.
 		AWSAccounts(namespace).
-		List(labels.NewSelector().Add(*availableRequirement, *poolRequirement))
+		List(labels.NewSelector().Add(selectorRequirements...))
 	if err != nil {
 		if errors.IsNotFound(err) {
 			utilruntime.HandleError(fmt.Errorf("account '%s' in work queue no longer exists", key))
@@ -275,20 +266,57 @@ func (c *AWSAccountController) syncAccountHandler(key string) (err error) {
 		return
 	}
 
+	// Retrieve the pool from the account - this is needed in order to check the pool is kept full.
 	pool, err := c.retrievePoolFromAccount(account)
 	if err != nil {
 		utilruntime.HandleError(fmt.Errorf("Could not find pool  %s: %v",
-			account.Labels["pool_name"], err))
+			poolName, err))
 		return
 	}
 
-	// Account updated occurred - check if number of available accounts in upstream is smaller than desired pool size.
-	// Assuming updates to accounts means an account was freed or allocated to a user.
-	if len(availableAccounts) < pool.Spec.PoolSize {
+	// create the missing accounts in the pool.
+	c.fillAccountPool(len(availableAccounts), pool.Spec.PoolSize, namespace, pool.Name)
+
+	return nil
+}
+
+func (c *AWSAccountController) retrievePoolFromAccount(account *accountpool.AWSAccount) (*accountpool.AccountPool, error) {
+	pool, err := c.awsaccountclientset.AccountpooloperatorV1().
+		AccountPools(metav1.NamespaceDefault).
+		Get(account.Labels["pool_name"], metav1.GetOptions{})
+	if err != nil {
+		return nil, err
+	}
+	return pool, nil
+}
+
+func (c *AWSAccountController) poolSelectorRequirements(poolName string) []labels.Requirement {
+	result := make([]labels.Requirement, 2)
+	// make the selector for current available in the given the associated account pool.
+	availableRequirement, err := labels.NewRequirement("available", selection.Equals, []string{"true"})
+	if err != nil {
+		utilruntime.HandleError(fmt.Errorf("invalid requirement %v", err))
+		return result
+	}
+	result = append(result, *availableRequirement)
+
+	poolRequirement, err := labels.NewRequirement("pool_name", selection.Equals, []string{poolName})
+	if err != nil {
+		utilruntime.HandleError(fmt.Errorf("invalid requirement %v", err))
+		return result
+	}
+	result = append(result, *poolRequirement)
+	return result
+}
+
+// Check if number of available accounts in etcd is smaller than the desired pool size.
+// If yes - create the accounts.
+func (c *AWSAccountController) fillAccountPool(availableAccountsSize, poolSize int, namespace, poolName string) {
+	if availableAccountsSize < poolSize {
 		glog.Info("AccountPool depleted: creating new accounts...")
-		numOfMissingAcc := pool.Spec.PoolSize - len(availableAccounts)
+		numOfMissingAcc := poolSize - availableAccountsSize
 		for i := 0; i < numOfMissingAcc; i++ {
-			acc, err := accountpool.NewAvailableAccount(namespace, pool.Name)
+			acc, err := accountpool.NewAvailableAccount(namespace, poolName)
 			if err != nil {
 				glog.Errorf("error creating account: %v", err)
 			}
@@ -299,17 +327,4 @@ func (c *AWSAccountController) syncAccountHandler(key string) (err error) {
 			}
 		}
 	}
-	return nil
-}
-
-func (c *AWSAccountController) retrievePoolFromAccount(
-	account *accountpool.AWSAccount,
-) (*accountpool.AccountPool, error) {
-	pool, err := c.awsaccountclientset.AccountpooloperatorV1().
-		AccountPools(metav1.NamespaceDefault).
-		Get(account.Labels["pool_name"], metav1.GetOptions{})
-	if err != nil {
-		return nil, err
-	}
-	return pool, nil
 }

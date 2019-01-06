@@ -121,7 +121,7 @@ func TestSyncAWSAccount(t *testing.T) {
 		f.t.Logf("waiting for sync...")
 		time.Sleep(1 * time.Millisecond)
 	}
-	err = c.syncAccountHandler(getKey(acc, f.t))
+	err = c.reconcileAccounts(getKey(acc, f.t))
 	if err != nil {
 		f.t.Errorf("error syncing account: %v", err)
 	}
