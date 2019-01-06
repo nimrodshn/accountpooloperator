@@ -5,6 +5,5 @@ metadata:
 spec:
   provider: "AWS"
   credentials:
-    secret_access_key: "1234"
-    access_key_id: "4567"
+    name: "aws-credentials"
   pool_size: 3

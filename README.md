@@ -17,21 +17,20 @@ metadata:
 spec:
   provider: "AWS"
   credentials:
-    secret_access_key: "1234"
-    access_key_id: "4567"
+    name: "aws-credentials"
   pool_size: 2
 ```
+
 
 **Please Note:** AccountPoolOperator currently only supports AWS cloud platform and is undergoing constant changes.
 
 Using this file to create an account pool is as simple as: `kubectl create -f example_pool.yml`
 
-To watch you're account pool one can use the following command: `kubectl get awsaccounts -w`
+One can easily watch, get, edit etc. their accountpool using the `kubectl` tooling.
 
-**A note about credentials:** The credentials passed in the body of `example_pool.yml` must be credentials
+## Credentials
+The `spec.credentials.name` field is a reference to a secret which holds the **base64 encoded** AWS credentials: These must be credentials
 of an account with permissions to create accounts in an AWS organization (or the root account in that organization).
-
-One can easily edit the pool size by editing the `accountpool` CRD using `kubectl edit accountpool example-pool`.
 
 ## Managing accounts
 To mark an account as "unavailable" simply change the "available" label on the awsaccount CRD:

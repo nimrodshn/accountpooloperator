@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"time"
 
+	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -27,10 +28,11 @@ import (
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/organizations"
-	// nolint
+
 	accountpool "github.com/nimrodshn/accountpooloperator/pkg/apis/accountpooloperator/v1"
-	// nolint
 	clientset "github.com/nimrodshn/accountpooloperator/pkg/client/clientset/versioned"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 var (
@@ -43,21 +45,38 @@ type AWSAccountProvisioner struct {
 
 func (a *AWSAccountProvisioner) ProvisionAccount(
 	account *accountpool.AWSAccount,
-	creds map[string]string,
+	creds corev1.LocalObjectReference,
 	stopCh <-chan struct{}) {
 	// Handle any account errors that might occurre.
 	errCh := make(chan error)
 	go a.handleErrors(account, errCh, stopCh)
 
-	err := a.validateCredentialsExist(creds)
+	clientset, err := kubernetes.NewForConfig(a.Config)
 	if err != nil {
 		errCh <- err
 		close(errCh)
+		return
+	}
+
+	credsSecret, err := clientset.CoreV1().Secrets(account.Namespace).Get(creds.Name, metav1.GetOptions{})
+	if err != nil {
+		errCh <- err
+		close(errCh)
+		return
+	}
+
+	AWSCredentials := a.converteSecretDataToMap(credsSecret.Data)
+
+	err = a.validateCredentialsExist(AWSCredentials)
+	if err != nil {
+		errCh <- err
+		close(errCh)
+		return
 	}
 
 	sess, err := session.NewSession(&aws.Config{
-		Credentials: credentials.NewStaticCredentials(creds["access_key_id"],
-			creds["secret_access_key"], ""),
+		Credentials: credentials.NewStaticCredentials(AWSCredentials["access_key_id"],
+			AWSCredentials["secret_access_key"], ""),
 	})
 	if err != nil {
 		errCh <- err
@@ -85,7 +104,7 @@ func (a *AWSAccountProvisioner) ProvisionAccount(
 	statusID := result.CreateAccountStatus.Id
 
 	// Run watchAccountState worker.
-	go a.watchAndUpdateAccountStatus(statusID, account, creds, errCh, stopCh)
+	go a.watchAndUpdateAccountStatus(statusID, account, AWSCredentials, errCh, stopCh)
 }
 
 // watchAndUpdateAccountStatus periodically updates the account status field according to the status
@@ -215,4 +234,12 @@ func (a *AWSAccountProvisioner) validateCredentialsExist(creds map[string]string
 			"the root master account of an organization.")
 	}
 	return nil
+}
+
+func (a *AWSAccountProvisioner) converteSecretDataToMap(data map[string][]byte) map[string]string {
+	result := make(map[string]string)
+	for key, value := range data {
+		result[key] = string(value[:])
+	}
+	return result
 }

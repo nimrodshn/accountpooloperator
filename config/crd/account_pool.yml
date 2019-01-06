@@ -21,11 +21,6 @@ spec:
               type: "string"
             credentials:
               type: "object"
-              properties:
-                secret_access_key:
-                  type: string
-                access_key_id:
-                  type: string
             pool_size:
               type: "integer"
               minimum: 1

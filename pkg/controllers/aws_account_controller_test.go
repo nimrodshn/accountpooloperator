@@ -22,13 +22,11 @@ import (
 	"testing"
 	"time"
 
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	//nolint
 	accountpool "github.com/nimrodshn/accountpooloperator/pkg/apis/accountpooloperator/v1"
-	//nolint
 	fakeclient "github.com/nimrodshn/accountpooloperator/pkg/client/clientset/versioned/fake"
-	// nolint
 	informerfactory "github.com/nimrodshn/accountpooloperator/pkg/client/informers/externalversions"
+	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 var (
@@ -38,8 +36,9 @@ var (
 			Name: "test_pool",
 		},
 		Spec: accountpool.AccountPoolSpec{
-			Provider: accountpool.AWSCloudProvider,
-			PoolSize: 5,
+			Provider:    accountpool.AWSCloudProvider,
+			Credentials: corev1.LocalObjectReference{},
+			PoolSize:    5,
 		},
 	}
 )
@@ -47,7 +46,7 @@ var (
 type fakeAccountProvisioner struct{}
 
 func (f *fakeAccountProvisioner) ProvisionAccount(account *accountpool.AWSAccount,
-	creds map[string]string,
+	creds corev1.LocalObjectReference,
 	stopCh <-chan struct{}) {
 }
 

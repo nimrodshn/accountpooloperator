@@ -17,10 +17,11 @@ limitations under the License.
 package accountprovisioner
 
 import (
-	// nolint
 	accountpool "github.com/nimrodshn/accountpooloperator/pkg/apis/accountpooloperator/v1"
+	corev1 "k8s.io/api/core/v1"
 )
 
+// AccountProvisioner is an interface which describes provisioning account.
 type AccountProvisioner interface {
-	ProvisionAccount(account *accountpool.AWSAccount, creds map[string]string, stopCh <-chan struct{})
+	ProvisionAccount(account *accountpool.AWSAccount, credentials corev1.LocalObjectReference, stopCh <-chan struct{})
 }

@@ -19,6 +19,7 @@ package v1
 import (
 	"fmt"
 	"github.com/segmentio/ksuid"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -51,9 +52,8 @@ type AccountPoolSpec struct {
 	// Provider is the cloud provider name.
 	Provider CloudProvider `json:"cloud_provider"`
 
-	// Credentials is a map of credentials for the root user of the organization
-	// that owns the AccountPool.
-	Credentials map[string]string `json:"credentials"`
+	// Credentials is a reference to a secret with the credentials for a user with 'Organization:CreateAccount' Permissions.
+	Credentials corev1.LocalObjectReference `json:"credentials"`
 
 	// AccountPoolSize is the size of the account pool.
 	PoolSize int `json:"pool_size"`
@@ -74,7 +74,7 @@ type AccountPoolList struct {
 func NewAWSAccountPool(
 	namespace string,
 	poolSize int,
-	credentials map[string]string) (*AccountPool, error) {
+	credentials corev1.LocalObjectReference) (*AccountPool, error) {
 	uid, err := ksuid.NewRandom()
 	if err != nil {
 		return nil, err
