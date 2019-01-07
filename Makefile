@@ -16,6 +16,7 @@
 .PHONY: \
 	clean \
 	image \
+	test \
 	$(NULL)
 
 accountpooloperator:
@@ -27,6 +28,11 @@ clean:
 image:
 	docker build . -t nimrodshn/accountpooloperator:latest
 
-generate:
+generate: vendor
 	go generate ./pkg/... ./cmd/...
 
+test: vendor generate
+	go test ./pkg/controllers
+
+vendor: Gopkg.lock
+	dep ensure -vendor-only -v

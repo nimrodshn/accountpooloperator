@@ -1,4 +1,5 @@
 # AccountPoolOperator
+[![Build Status](https://travis-ci.com/nimrodshn/accountpooloperator.svg?token=8bTEfKi17WtMetLXgARz&branch=master)](https://travis-ci.com/nimrodshn/accountpooloperator.svg?token=8bTEfKi17WtMetLXgARz&branch=master)
 
 AccountPoolOperator offers a declerative API for users to create, maintain and monitor account pools across cloud platforms.
 
