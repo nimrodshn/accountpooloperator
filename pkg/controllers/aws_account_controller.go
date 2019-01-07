@@ -69,6 +69,7 @@ func NewAWSAccountControllerFactory(
 	}, nil
 }
 
+// CreateControllerAndRun initializes an account controller and runs it.
 func (f *AWSAccountControllerFactory) CreateControllerAndRun() *AWSAccountController {
 	informer := f.factory.Accountpooloperator().V1().AWSAccounts()
 	accountController := NewAWSAccountController(
@@ -251,7 +252,9 @@ func (c *AWSAccountController) reconcileAccounts(key string) (err error) {
 		return
 	}
 
-	// List the account according to the selectors.
+	// List the available accounts in the pool of the updated account -
+	// We need to check if updating the account resulted with
+	// insufficiant available account in the pool.
 	namespace := metav1.NamespaceDefault
 	poolName := account.Labels["pool_name"]
 	selectorRequirements := c.poolSelectorRequirements(poolName)
@@ -266,7 +269,7 @@ func (c *AWSAccountController) reconcileAccounts(key string) (err error) {
 		return
 	}
 
-	// Retrieve the pool from the account - this is needed in order to check the pool is kept full.
+	// Retrieve the actoual pool object from the account - this is needed in order to check the pool is kept full.
 	pool, err := c.retrievePoolFromAccount(account)
 	if err != nil {
 		utilruntime.HandleError(fmt.Errorf("Could not find pool  %s: %v",
@@ -274,14 +277,15 @@ func (c *AWSAccountController) reconcileAccounts(key string) (err error) {
 		return
 	}
 
-	// create the missing accounts in the pool.
+	// create the missing accounts in the pool (if exist).
 	c.fillAccountPool(len(availableAccounts), pool.Spec.PoolSize, namespace, pool.Name)
 
 	return nil
 }
 
 func (c *AWSAccountController) retrievePoolFromAccount(account *accountpool.AWSAccount) (*accountpool.AccountPool, error) {
-	pool, err := c.awsaccountclientset.AccountpooloperatorV1().
+	pool, err := c.awsaccountclientset.
+		AccountpooloperatorV1().
 		AccountPools(metav1.NamespaceDefault).
 		Get(account.Labels["pool_name"], metav1.GetOptions{})
 	if err != nil {
@@ -290,22 +294,16 @@ func (c *AWSAccountController) retrievePoolFromAccount(account *accountpool.AWSA
 	return pool, nil
 }
 
+// poolSelectorRequirements creates the requirements (labels) for current available accounts in the associated account pool.
 func (c *AWSAccountController) poolSelectorRequirements(poolName string) []labels.Requirement {
 	result := make([]labels.Requirement, 2)
-	// make the selector for current available in the given the associated account pool.
-	availableRequirement, err := labels.NewRequirement("available", selection.Equals, []string{"true"})
-	if err != nil {
-		utilruntime.HandleError(fmt.Errorf("invalid requirement %v", err))
-		return result
-	}
-	result = append(result, *availableRequirement)
+	// Errors in 'NewRequirement' are ignored as they cannot occure - see 'NewRequirement' docs.
+	// Require label 'available' equals 'true'.
+	availableRequirement, _ := labels.NewRequirement("available", selection.Equals, []string{"true"})
+	// Require label 'pool_name' equals poolName.
+	poolRequirement, _ := labels.NewRequirement("pool_name", selection.Equals, []string{poolName})
 
-	poolRequirement, err := labels.NewRequirement("pool_name", selection.Equals, []string{poolName})
-	if err != nil {
-		utilruntime.HandleError(fmt.Errorf("invalid requirement %v", err))
-		return result
-	}
-	result = append(result, *poolRequirement)
+	result = append(result, *availableRequirement, *poolRequirement)
 	return result
 }
 

@@ -41,6 +41,7 @@ const threadCount = 3
 // The informers cache updates from etcd period.
 const resyncPeriod = time.Minute * 10
 
+// AccountPoolInformerFactory is a wrapper for AccountPoolInformer factory.
 type AccountPoolInformerFactory struct {
 	factory             informerfactory.SharedInformerFactory
 	awsaccountclientset clientset.Interface
@@ -48,6 +49,7 @@ type AccountPoolInformerFactory struct {
 	controllerMap       map[string]*AWSAccountController
 }
 
+// NewAccountPoolInformerFactory is a constructor for creating an AccountPoolInformerFactory.
 func NewAccountPoolInformerFactory(config *rest.Config,
 	stopCh <-chan struct{}) (*AccountPoolInformerFactory, error) {
 	clientset, err := clientset.NewForConfig(config)
