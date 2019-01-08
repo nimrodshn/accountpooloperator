@@ -16,28 +16,17 @@
 package main
 
 import (
+	"flag"
 	"github.com/nimrodshn/accountpooloperator/pkg/accountprovisioner"
 	"github.com/nimrodshn/accountpooloperator/pkg/apis/accountpooloperator/v1"
 	"github.com/nimrodshn/accountpooloperator/pkg/controllers"
 	"github.com/nimrodshn/accountpooloperator/pkg/signals"
-
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	"flag"
 
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 
 	"log"
-)
-
-const (
-	// The number of threads to process events.
-	threadCount = 3
-
-	// The namespace to run our controller on.
-	defaultNamespace = metav1.NamespaceDefault
 )
 
 var kubeconfig string

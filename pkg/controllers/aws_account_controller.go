@@ -18,23 +18,18 @@ package controllers
 
 import (
 	"fmt"
+	"log"
 	"time"
 
-	// nolint
 	accountpool "github.com/nimrodshn/accountpooloperator/pkg/apis/accountpooloperator/v1"
-	// nolint
 	clientset "github.com/nimrodshn/accountpooloperator/pkg/client/clientset/versioned"
-	// nolint
-	informers "github.com/nimrodshn/accountpooloperator/pkg/client/informers/externalversions/accountpooloperator/v1"
-	// nolint
-	listers "github.com/nimrodshn/accountpooloperator/pkg/client/listers/accountpooloperator/v1"
-	// nolint
 	informerfactory "github.com/nimrodshn/accountpooloperator/pkg/client/informers/externalversions"
+	informers "github.com/nimrodshn/accountpooloperator/pkg/client/informers/externalversions/accountpooloperator/v1"
+	listers "github.com/nimrodshn/accountpooloperator/pkg/client/listers/accountpooloperator/v1"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 
-	"github.com/golang/glog"
 	"github.com/nimrodshn/accountpooloperator/pkg/accountprovisioner"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
@@ -45,6 +40,9 @@ import (
 	"k8s.io/client-go/util/workqueue"
 )
 
+const threadCount = 3
+
+// AWSAccountControllerFactory is a factory for AWSAccountController
 type AWSAccountControllerFactory struct {
 	awsaccountclientset clientset.Interface
 	factory             informerfactory.SharedInformerFactory
@@ -52,6 +50,7 @@ type AWSAccountControllerFactory struct {
 	stopCh              <-chan struct{}
 }
 
+// NewAWSAccountControllerFactory is a constructor for AWSAccountControllerFactory
 func NewAWSAccountControllerFactory(
 	config *rest.Config,
 	accountprovisioner accountprovisioner.AccountProvisioner,
@@ -113,7 +112,7 @@ func NewAWSAccountController(
 		stopCh:              stopCh,
 	}
 
-	glog.Info("Setting up event handlers")
+	log.Println("Setting up event handlers")
 
 	awsaccountinformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: func(new interface{}) {
@@ -141,10 +140,10 @@ func (c *AWSAccountController) enqueueAccount(obj interface{}) {
 
 func (c *AWSAccountController) addAccountHandler(new interface{}) {
 	newAccount := new.(*accountpool.AWSAccount)
-	glog.Infof("processing new account: %v", newAccount.Spec.AccountName)
+	log.Printf("processing new account: %v\n", newAccount.Spec.AccountName)
 	pool, err := c.retrievePoolFromAccount(newAccount)
 	if err != nil {
-		glog.Errorf("Could not retreieve account pool: %s", newAccount.Labels["pool_name"])
+		log.Printf("Could not retreieve account pool: %s\n", newAccount.Labels["pool_name"])
 	}
 	// run provision account job.
 	go c.accountprovisioner.ProvisionAccount(
@@ -159,15 +158,15 @@ func (c *AWSAccountController) Run(threadiness int) error {
 	defer c.workqueue.ShutDown() // makes sure there are no dangling goroutines
 
 	// Start the informer factories to begin populating the informer caches
-	glog.Info("Starting AWS Account controller")
+	log.Println("Starting AWS Account controller")
 
 	for i := 0; i < threadiness; i++ {
 		go wait.Until(c.runWorker, time.Second, c.stopCh)
 	}
 
-	glog.Info("Started workers")
+	log.Println("Started workers")
 	<-c.stopCh
-	glog.Info("Shutting down workers")
+	log.Println("Shutting down workers")
 
 	return nil
 }
@@ -222,7 +221,7 @@ func (c *AWSAccountController) processNextWorkItem() bool {
 		// Finally, if no error occurs we Forget this item so it does not
 		// get queued again until another change happens.
 		c.workqueue.Forget(obj)
-		glog.Infof("Successfully synced '%s'", key)
+		log.Printf("Successfully synced '%s'", key)
 		return nil
 	}(obj)
 
@@ -239,34 +238,36 @@ func (c *AWSAccountController) processNextWorkItem() bool {
 // as described by the AccountPool.
 func (c *AWSAccountController) reconcileAccounts(key string) (err error) {
 	// Convert the namespace/name string into a distinct namespace and name
-	_, name, err := cache.SplitMetaNamespaceKey(key)
+	namespace, name, err := cache.SplitMetaNamespaceKey(key)
 	if err != nil {
 		utilruntime.HandleError(fmt.Errorf("invalid resource key: %s", key))
-		return
+		return nil
 	}
 
 	// Retrieve the account from etcd.
-	account, err := c.awsaccountlister.AWSAccounts(metav1.NamespaceDefault).Get(name)
+	account, err := c.awsaccountlister.AWSAccounts(namespace).Get(name)
 	if err != nil {
 		utilruntime.HandleError(fmt.Errorf("could not get account with name: %s", name))
-		return
+		return nil
 	}
 
 	// List the available accounts in the pool of the updated account -
 	// We need to check if updating the account resulted with
 	// insufficiant available account in the pool.
-	namespace := metav1.NamespaceDefault
 	poolName := account.Labels["pool_name"]
-	selectorRequirements := c.poolSelectorRequirements(poolName)
-	availableAccounts, err := c.awsaccountlister.
+	availabelSelector := fmt.Sprintf("pool_name = %v, available = true", poolName)
+	availableAccounts, err := c.awsaccountclientset.
+		AccountpooloperatorV1().
 		AWSAccounts(namespace).
-		List(labels.NewSelector().Add(selectorRequirements...))
+		List(metav1.ListOptions{
+			LabelSelector: availabelSelector,
+		})
 	if err != nil {
 		if errors.IsNotFound(err) {
 			utilruntime.HandleError(fmt.Errorf("account '%s' in work queue no longer exists", key))
-			return
+			return nil
 		}
-		return
+		return nil
 	}
 
 	// Retrieve the actoual pool object from the account - this is needed in order to check the pool is kept full.
@@ -274,11 +275,11 @@ func (c *AWSAccountController) reconcileAccounts(key string) (err error) {
 	if err != nil {
 		utilruntime.HandleError(fmt.Errorf("Could not find pool  %s: %v",
 			poolName, err))
-		return
+		return nil
 	}
 
 	// create the missing accounts in the pool (if exist).
-	c.fillAccountPool(len(availableAccounts), pool.Spec.PoolSize, namespace, pool.Name)
+	c.fillAccountPool(len(availableAccounts.Items), pool.Spec.PoolSize, namespace, pool.Name)
 
 	return nil
 }
@@ -286,7 +287,7 @@ func (c *AWSAccountController) reconcileAccounts(key string) (err error) {
 func (c *AWSAccountController) retrievePoolFromAccount(account *accountpool.AWSAccount) (*accountpool.AccountPool, error) {
 	pool, err := c.awsaccountclientset.
 		AccountpooloperatorV1().
-		AccountPools(metav1.NamespaceDefault).
+		AccountPools(account.Namespace).
 		Get(account.Labels["pool_name"], metav1.GetOptions{})
 	if err != nil {
 		return nil, err
@@ -311,17 +312,18 @@ func (c *AWSAccountController) poolSelectorRequirements(poolName string) []label
 // If yes - create the accounts.
 func (c *AWSAccountController) fillAccountPool(availableAccountsSize, poolSize int, namespace, poolName string) {
 	if availableAccountsSize < poolSize {
-		glog.Info("AccountPool depleted: creating new accounts...")
+		log.Printf("AccountPool depleted - Number of available accounts: %d, Pool size: %d\n. Creating new accounts..",
+			availableAccountsSize, poolSize)
 		numOfMissingAcc := poolSize - availableAccountsSize
 		for i := 0; i < numOfMissingAcc; i++ {
 			acc, err := accountpool.NewAvailableAccount(namespace, poolName)
 			if err != nil {
-				glog.Errorf("error creating account: %v", err)
+				log.Printf("error creating account: %v\n", err)
 			}
 
 			_, err = c.awsaccountclientset.AccountpooloperatorV1().AWSAccounts(namespace).Create(acc)
 			if err != nil {
-				glog.Errorln("Failed to create new account..")
+				log.Println("Failed to create new account..")
 			}
 		}
 	}

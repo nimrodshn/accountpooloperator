@@ -33,7 +33,8 @@ var (
 	// create an account pool of size five.
 	testPool = &accountpool.AccountPool{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "test_pool",
+			Name:      "test_pool",
+			Namespace: metav1.NamespaceDefault,
 		},
 		Spec: accountpool.AccountPoolSpec{
 			Provider:    accountpool.AWSCloudProvider,

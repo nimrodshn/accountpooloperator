@@ -18,11 +18,9 @@ package utils
 
 import (
 	"testing"
-	//nolint
-	fakeclient "github.com/nimrodshn/accountpooloperator/pkg/client/clientset/versioned/fake"
-	//nolint
-	accountpool "github.com/nimrodshn/accountpooloperator/pkg/apis/accountpooloperator/v1"
 
+	accountpool "github.com/nimrodshn/accountpooloperator/pkg/apis/accountpooloperator/v1"
+	fakeclient "github.com/nimrodshn/accountpooloperator/pkg/client/clientset/versioned/fake"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -30,7 +28,8 @@ var (
 	// create an account pool of size five.
 	testPool = &accountpool.AccountPool{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "test_pool",
+			Name:      "test_pool",
+			Namespace: metav1.NamespaceDefault,
 		},
 		Spec: accountpool.AccountPoolSpec{
 			Provider: accountpool.AWSCloudProvider,
@@ -71,7 +70,7 @@ func TestClaimAccount(t *testing.T) {
 		f.t.Errorf("error updating account: %v", err)
 	}
 
-	_, err = ClaimAccount(f.client, testPool.Name, "test-user")
+	_, err = ClaimAccount(f.client, "test-user")
 	if err != nil {
 		f.t.Errorf("error claiming account: %v", err)
 	}

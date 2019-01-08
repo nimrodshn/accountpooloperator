@@ -25,18 +25,11 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/cache"
 
-	// nolint
-	informers "github.com/nimrodshn/accountpooloperator/pkg/client/informers/externalversions/accountpooloperator/v1"
-	// nolint
 	accountpool "github.com/nimrodshn/accountpooloperator/pkg/apis/accountpooloperator/v1"
-	// nolint
 	clientset "github.com/nimrodshn/accountpooloperator/pkg/client/clientset/versioned"
-	// nolint
 	informerfactory "github.com/nimrodshn/accountpooloperator/pkg/client/informers/externalversions"
+	informers "github.com/nimrodshn/accountpooloperator/pkg/client/informers/externalversions/accountpooloperator/v1"
 )
-
-// the number of worker threads.
-const threadCount = 3
 
 // The informers cache updates from etcd period.
 const resyncPeriod = time.Minute * 10
@@ -85,34 +78,35 @@ func (f *AccountPoolInformerFactory) CreateInformerAndRun() *informers.AccountPo
 func (f *AccountPoolInformerFactory) addAccountPoolHandler(new interface{}) {
 	newPool := new.(*accountpool.AccountPool)
 	// Create the account pool if it does not exist.
-	if !accountsExist(f.awsaccountclientset, newPool.Name) {
-		createNewAvailablePool(f.awsaccountclientset, newPool)
+	if !f.accountsExistInPool(newPool) {
+		fmt.Println("Creating new AccountPool...")
+		f.createNewAvailablePool(newPool)
 	}
 }
 
-func createNewAvailablePool(
-	awsaccountclientset clientset.Interface,
-	newPool *accountpool.AccountPool) {
+func (f *AccountPoolInformerFactory) createNewAvailablePool(newPool *accountpool.AccountPool) {
 	for i := 0; i < newPool.Spec.PoolSize; i++ {
-		account, err := accountpool.NewAvailableAccount(metav1.NamespaceDefault, newPool.Name)
+		account, err := accountpool.NewAvailableAccount(newPool.Namespace, newPool.Name)
 		if err != nil {
 			glog.Errorf("Could not create inital account pool.")
 		}
 
-		_, err = awsaccountclientset.AccountpooloperatorV1().AWSAccounts(metav1.NamespaceDefault).Create(account)
+		_, err = f.awsaccountclientset.AccountpooloperatorV1().AWSAccounts(newPool.Namespace).Create(account)
 		if err != nil {
 			glog.Errorf("Failed to create new account: %v", err)
 		}
 	}
 }
 
-func accountsExist(awsaccountclientset clientset.Interface,
-	poolName string) bool {
-	lableSelector := fmt.Sprintf("pool_name=%v", poolName)
-	accountList, err := awsaccountclientset.AccountpooloperatorV1().AWSAccounts(metav1.NamespaceDefault).List(
-		metav1.ListOptions{
-			LabelSelector: lableSelector,
-		})
+func (f *AccountPoolInformerFactory) accountsExistInPool(pool *accountpool.AccountPool) bool {
+	lableSelector := fmt.Sprintf("pool_name=%v", pool.Name)
+	accountList, err := f.awsaccountclientset.
+		AccountpooloperatorV1().
+		AWSAccounts(pool.Namespace).
+		List(
+			metav1.ListOptions{
+				LabelSelector: lableSelector,
+			})
 	if err != nil {
 		glog.Errorf("An error occured trying to fetch account list")
 		return false

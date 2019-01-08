@@ -19,22 +19,19 @@ package utils
 import (
 	"fmt"
 
-	// nolint
 	accountpool "github.com/nimrodshn/accountpooloperator/pkg/apis/accountpooloperator/v1"
-	// nolint
 	clientset "github.com/nimrodshn/accountpooloperator/pkg/client/clientset/versioned"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // Select only the available accounts.
 
-// ClaimAccount claims an AWS account in a specific pool and returns the claimed account or
+// ClaimAccount claims an AWS account and returns the claimed account or
 // returns an error if one occurred.
-func ClaimAccount(clientset clientset.Interface, poolName, user string) (*accountpool.AWSAccount, error) {
-	labelSelector := fmt.Sprintf("available=true, pool_name=%s", poolName)
+func ClaimAccount(clientset clientset.Interface, user string) (*accountpool.AWSAccount, error) {
+	labelSelector := fmt.Sprintf("available=true")
 	noAccountErr := fmt.Errorf("there are no available accounts at this point please try in a few minutes")
-	namespaceDefault := metav1.NamespaceDefault
-	accountList, err := clientset.AccountpooloperatorV1().AWSAccounts(namespaceDefault).List(metav1.ListOptions{
+	accountList, err := clientset.AccountpooloperatorV1().AWSAccounts(metav1.NamespaceAll).List(metav1.ListOptions{
 		LabelSelector: labelSelector,
 	})
 	if err != nil {
@@ -48,7 +45,7 @@ func ClaimAccount(clientset clientset.Interface, poolName, user string) (*accoun
 			// Claim the first available account.
 			account.Labels["available"] = "false"
 			account.Labels["user"] = user
-			_, err := clientset.AccountpooloperatorV1().AWSAccounts(namespaceDefault).Update(&account)
+			_, err := clientset.AccountpooloperatorV1().AWSAccounts(account.Namespace).Update(&account)
 			if err != nil {
 				// Print an error and attempt to claim another account.
 				fmt.Printf("An error occurred while trying to claim the account %v: %v",
