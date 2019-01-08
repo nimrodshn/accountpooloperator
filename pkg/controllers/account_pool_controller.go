@@ -35,7 +35,7 @@ import (
 // The informers cache updates from etcd period.
 const resyncPeriod = time.Minute * 10
 
-// AccountPoolInformerFactory is a wrapper for AccountPoolInformer factory.
+// AccountPoolControllerFactory is a wrapper for AccountPoolInformer factory.
 type AccountPoolControllerFactory struct {
 	factory             informerfactory.SharedInformerFactory
 	awsaccountclientset clientset.Interface

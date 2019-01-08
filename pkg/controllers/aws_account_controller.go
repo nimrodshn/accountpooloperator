@@ -154,12 +154,14 @@ func (c *AWSAccountController) reconcileAccounts(new interface{}) {
 		})
 	if err != nil {
 		log.Printf("could not reconcile: %s, an error occurred trying to list available accounts in pool %s: %v", account.Name, poolName, err)
+		return
 	}
 
 	// Retrieve the actoual pool object from the account - this is needed in order to check the pool is kept full.
 	pool, err := c.retrievePoolFromAccount(account)
 	if err != nil {
 		log.Printf("could not reconcile: %s, could not find pool  %s: %v", account.Name, poolName, err)
+		return
 	}
 
 	// create the missing accounts in the pool (if exist).
