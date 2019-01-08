@@ -68,7 +68,8 @@ func (f *AccountPoolControllerFactory) CreateControllerAndRun() *informers.Accou
 
 	log.Println("Setting up event handlers...")
 	accountpoolinformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
-		AddFunc: f.addAccountPoolHandler,
+		AddFunc:    f.addAccountPoolHandler,
+		DeleteFunc: f.deleteAccountPoolHandler,
 	})
 
 	log.Println("Starting Account Pool Controller..")
@@ -83,6 +84,11 @@ func (f *AccountPoolControllerFactory) addAccountPoolHandler(new interface{}) {
 		log.Println("Creating new AccountPool...")
 		f.createNewAvailablePool(newPool)
 	}
+}
+
+func (f *AccountPoolControllerFactory) deleteAccountPoolHandler(old interface{}) {
+	oldPool := old.(*accountpool.AccountPool)
+	f.deleteAssociatedAccounts(oldPool)
 }
 
 func (f *AccountPoolControllerFactory) createNewAvailablePool(newPool *accountpool.AccountPool) {
@@ -116,4 +122,28 @@ func (f *AccountPoolControllerFactory) accountsExistInPool(pool *accountpool.Acc
 		return true
 	}
 	return false
+}
+
+func (f *AccountPoolControllerFactory) deleteAssociatedAccounts(pool *accountpool.AccountPool) {
+	lableSelector := fmt.Sprintf("pool_name=%v", pool.Name)
+	accountList, err := f.awsaccountclientset.
+		AccountpooloperatorV1().
+		AWSAccounts(pool.Namespace).
+		List(
+			metav1.ListOptions{
+				LabelSelector: lableSelector,
+			})
+	if err != nil {
+		glog.Errorf("An error occured trying to fetch account list")
+		return
+	}
+	for _, account := range accountList.Items {
+		err = f.awsaccountclientset.AccountpooloperatorV1().
+			AWSAccounts(account.Namespace).
+			Delete(account.Name, &metav1.DeleteOptions{})
+		if err != nil {
+			glog.Errorf("An error occured trying to delete account %s", account.Name)
+			return
+		}
+	}
 }
