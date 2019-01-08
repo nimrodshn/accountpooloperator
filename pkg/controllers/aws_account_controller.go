@@ -19,7 +19,6 @@ package controllers
 import (
 	"fmt"
 	"log"
-	"time"
 
 	accountpool "github.com/nimrodshn/accountpooloperator/pkg/apis/accountpooloperator/v1"
 	clientset "github.com/nimrodshn/accountpooloperator/pkg/client/clientset/versioned"
@@ -28,19 +27,12 @@ import (
 	listers "github.com/nimrodshn/accountpooloperator/pkg/client/listers/accountpooloperator/v1"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 
 	"github.com/nimrodshn/accountpooloperator/pkg/accountprovisioner"
-	"k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/apimachinery/pkg/selection"
-	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/util/workqueue"
 )
-
-const threadCount = 3
 
 // AWSAccountControllerFactory is a factory for AWSAccountController
 type AWSAccountControllerFactory struct {
@@ -77,11 +69,10 @@ func (f *AWSAccountControllerFactory) CreateControllerAndRun() *AWSAccountContro
 		f.accountprovisioner,
 		f.stopCh)
 
+	log.Println("Starting AWS Account Controller..")
 	// Running informer loop.
-	f.factory.Start(f.stopCh)
+	go informer.Informer().Run(f.stopCh)
 
-	// Running informer workers.
-	go accountController.Run(threadCount)
 	return accountController
 }
 
@@ -112,30 +103,20 @@ func NewAWSAccountController(
 		stopCh:              stopCh,
 	}
 
-	log.Println("Setting up event handlers")
+	log.Println("Setting up event handlers...")
 
 	awsaccountinformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: func(new interface{}) {
 			controller.addAccountHandler(new)
 		},
 		UpdateFunc: func(old, new interface{}) {
-			controller.enqueueAccount(new)
+			controller.reconcileAccounts(new)
 		},
 		DeleteFunc: func(old interface{}) {
-			controller.enqueueAccount(old)
+			controller.reconcileAccounts(old)
 		},
 	})
 	return controller
-}
-
-func (c *AWSAccountController) enqueueAccount(obj interface{}) {
-	var err error
-	var key string
-	if key, err = cache.MetaNamespaceKeyFunc(obj); err != nil {
-		utilruntime.HandleError(err)
-		return
-	}
-	c.workqueue.AddRateLimited(key)
 }
 
 func (c *AWSAccountController) addAccountHandler(new interface{}) {
@@ -152,104 +133,13 @@ func (c *AWSAccountController) addAccountHandler(new interface{}) {
 		c.stopCh)
 }
 
-// Run runs the workers processing events from infromers cache.
-func (c *AWSAccountController) Run(threadiness int) error {
-	defer utilruntime.HandleCrash()
-	defer c.workqueue.ShutDown() // makes sure there are no dangling goroutines
-
-	// Start the informer factories to begin populating the informer caches
-	log.Println("Starting AWS Account controller")
-
-	for i := 0; i < threadiness; i++ {
-		go wait.Until(c.runWorker, time.Second, c.stopCh)
-	}
-
-	log.Println("Started workers")
-	<-c.stopCh
-	log.Println("Shutting down workers")
-
-	return nil
-}
-
-// runWorker is a long-running function that will continually call the
-// processNextWorkItem function in order to read and process a message on the
-// workqueue.
-func (c *AWSAccountController) runWorker() {
-	for c.processNextWorkItem() {
-	}
-}
-
-// processNextWorkItem will read a single work item (Account) off the workqueue and
-// attempt to process it, by calling the syncAccountHandler.
-func (c *AWSAccountController) processNextWorkItem() bool {
-	obj, shutdown := c.workqueue.Get()
-
-	if shutdown {
-		return false
-	}
-
-	// We wrap this block in a func so we can defer c.workqueue.Done.
-	err := func(obj interface{}) error {
-		// We call Done here so the workqueue knows we have finished
-		// processing this item. We also must remember to call Forget if we
-		// do not want this work item being re-queued. For example, we do
-		// not call Forget if a transient error occurs, instead the item is
-		// put back on the workqueue and attempted again after a back-off
-		// period.
-		defer c.workqueue.Done(obj)
-		var key string
-		var ok bool
-		// We expect strings to come off the workqueue. These are of the
-		// form namespace/name. We do this as the delayed nature of the
-		// workqueue means the items in the informer cache may actually be
-		// more up to date that when the item was initially put onto the
-		// workqueue.
-		if key, ok = obj.(string); !ok {
-			// As the item in the workqueue is actually invalid, we call
-			// Forget here else we'd go into a loop of attempting to
-			// process a work item that is invalid.
-			c.workqueue.Forget(obj)
-			utilruntime.HandleError(fmt.Errorf("expected string in workqueue but got %#v", obj))
-			return nil
-		}
-
-		if err := c.reconcileAccounts(key); err != nil {
-			// Put the item back on the workqueue to handle any transient errors.
-			c.workqueue.AddRateLimited(key)
-			return fmt.Errorf("error syncing '%s': %s, requeuing", key, err.Error())
-		}
-		// Finally, if no error occurs we Forget this item so it does not
-		// get queued again until another change happens.
-		c.workqueue.Forget(obj)
-		log.Printf("Successfully synced '%s'", key)
-		return nil
-	}(obj)
-
-	if err != nil {
-		utilruntime.HandleError(err)
-		return true
-	}
-
-	return true
-}
-
 // reconcileAccounts receives an event (adding, deleting, updating of an accout) and tries to
 // reconcile the current list of available accounts with respect to the desired pool size
 // as described by the AccountPool.
-func (c *AWSAccountController) reconcileAccounts(key string) (err error) {
-	// Convert the namespace/name string into a distinct namespace and name
-	namespace, name, err := cache.SplitMetaNamespaceKey(key)
-	if err != nil {
-		utilruntime.HandleError(fmt.Errorf("invalid resource key: %s", key))
-		return nil
-	}
-
-	// Retrieve the account from etcd.
-	account, err := c.awsaccountlister.AWSAccounts(namespace).Get(name)
-	if err != nil {
-		utilruntime.HandleError(fmt.Errorf("could not get account with name: %s", name))
-		return nil
-	}
+func (c *AWSAccountController) reconcileAccounts(new interface{}) {
+	account := new.(*accountpool.AWSAccount)
+	namespace := account.Namespace
+	log.Printf("processing updated account: %v\n", account.Spec.AccountName)
 
 	// List the available accounts in the pool of the updated account -
 	// We need to check if updating the account resulted with
@@ -263,25 +153,18 @@ func (c *AWSAccountController) reconcileAccounts(key string) (err error) {
 			LabelSelector: availabelSelector,
 		})
 	if err != nil {
-		if errors.IsNotFound(err) {
-			utilruntime.HandleError(fmt.Errorf("account '%s' in work queue no longer exists", key))
-			return nil
-		}
-		return nil
+		log.Printf("could not reconcile: %s, an error occurred trying to list available accounts in pool %s: %v", account.Name, poolName, err)
 	}
 
 	// Retrieve the actoual pool object from the account - this is needed in order to check the pool is kept full.
 	pool, err := c.retrievePoolFromAccount(account)
 	if err != nil {
-		utilruntime.HandleError(fmt.Errorf("Could not find pool  %s: %v",
-			poolName, err))
-		return nil
+		log.Printf("could not reconcile: %s, could not find pool  %s: %v", account.Name, poolName, err)
 	}
 
 	// create the missing accounts in the pool (if exist).
 	c.fillAccountPool(len(availableAccounts.Items), pool.Spec.PoolSize, namespace, pool.Name)
 
-	return nil
 }
 
 func (c *AWSAccountController) retrievePoolFromAccount(account *accountpool.AWSAccount) (*accountpool.AccountPool, error) {
@@ -293,19 +176,6 @@ func (c *AWSAccountController) retrievePoolFromAccount(account *accountpool.AWSA
 		return nil, err
 	}
 	return pool, nil
-}
-
-// poolSelectorRequirements creates the requirements (labels) for current available accounts in the associated account pool.
-func (c *AWSAccountController) poolSelectorRequirements(poolName string) []labels.Requirement {
-	result := make([]labels.Requirement, 2)
-	// Errors in 'NewRequirement' are ignored as they cannot occure - see 'NewRequirement' docs.
-	// Require label 'available' equals 'true'.
-	availableRequirement, _ := labels.NewRequirement("available", selection.Equals, []string{"true"})
-	// Require label 'pool_name' equals poolName.
-	poolRequirement, _ := labels.NewRequirement("pool_name", selection.Equals, []string{poolName})
-
-	result = append(result, *availableRequirement, *poolRequirement)
-	return result
 }
 
 // Check if number of available accounts in etcd is smaller than the desired pool size.

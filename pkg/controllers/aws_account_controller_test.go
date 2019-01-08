@@ -121,10 +121,7 @@ func TestSyncAWSAccount(t *testing.T) {
 		f.t.Logf("waiting for sync...")
 		time.Sleep(1 * time.Millisecond)
 	}
-	err = c.reconcileAccounts(getKey(acc, f.t))
-	if err != nil {
-		f.t.Errorf("error syncing account: %v", err)
-	}
+	c.reconcileAccounts(acc)
 
 	accList, err := f.client.AccountpooloperatorV1().AWSAccounts(metav1.NamespaceDefault).
 		List(metav1.ListOptions{})

@@ -18,6 +18,7 @@ package controllers
 
 import (
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/golang/glog"
@@ -35,23 +36,23 @@ import (
 const resyncPeriod = time.Minute * 10
 
 // AccountPoolInformerFactory is a wrapper for AccountPoolInformer factory.
-type AccountPoolInformerFactory struct {
+type AccountPoolControllerFactory struct {
 	factory             informerfactory.SharedInformerFactory
 	awsaccountclientset clientset.Interface
 	stopCh              <-chan struct{}
 	controllerMap       map[string]*AWSAccountController
 }
 
-// NewAccountPoolInformerFactory is a constructor for creating an AccountPoolInformerFactory.
-func NewAccountPoolInformerFactory(config *rest.Config,
-	stopCh <-chan struct{}) (*AccountPoolInformerFactory, error) {
+// NewAccountPoolControllerFactory is a constructor for creating an AccountPoolInformerFactory.
+func NewAccountPoolControllerFactory(config *rest.Config,
+	stopCh <-chan struct{}) (*AccountPoolControllerFactory, error) {
 	clientset, err := clientset.NewForConfig(config)
 	if err != nil {
 		return nil, err
 	}
 
 	factory := informerfactory.NewSharedInformerFactory(clientset, resyncPeriod)
-	return &AccountPoolInformerFactory{
+	return &AccountPoolControllerFactory{
 		factory:             factory,
 		awsaccountclientset: clientset,
 		stopCh:              stopCh,
@@ -59,32 +60,32 @@ func NewAccountPoolInformerFactory(config *rest.Config,
 	}, nil
 }
 
-// CreateInformerAndRun initializes an account pool informer and runs it.
-func (f *AccountPoolInformerFactory) CreateInformerAndRun() *informers.AccountPoolInformer {
+// CreateControllerAndRun initializes an account pool informer and runs it.
+func (f *AccountPoolControllerFactory) CreateControllerAndRun() *informers.AccountPoolInformer {
 
 	// Creating account pool informer.
 	accountpoolinformer := f.factory.Accountpooloperator().V1().AccountPools()
 
-	glog.Info("Setting up event handlers...")
+	log.Println("Setting up event handlers...")
 	accountpoolinformer.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: f.addAccountPoolHandler,
 	})
 
-	glog.Info("Starting AccountPool informer..")
+	log.Println("Starting Account Pool Controller..")
 	go accountpoolinformer.Informer().Run(f.stopCh)
 	return &accountpoolinformer
 }
 
-func (f *AccountPoolInformerFactory) addAccountPoolHandler(new interface{}) {
+func (f *AccountPoolControllerFactory) addAccountPoolHandler(new interface{}) {
 	newPool := new.(*accountpool.AccountPool)
 	// Create the account pool if it does not exist.
 	if !f.accountsExistInPool(newPool) {
-		fmt.Println("Creating new AccountPool...")
+		log.Println("Creating new AccountPool...")
 		f.createNewAvailablePool(newPool)
 	}
 }
 
-func (f *AccountPoolInformerFactory) createNewAvailablePool(newPool *accountpool.AccountPool) {
+func (f *AccountPoolControllerFactory) createNewAvailablePool(newPool *accountpool.AccountPool) {
 	for i := 0; i < newPool.Spec.PoolSize; i++ {
 		account, err := accountpool.NewAvailableAccount(newPool.Namespace, newPool.Name)
 		if err != nil {
@@ -98,7 +99,7 @@ func (f *AccountPoolInformerFactory) createNewAvailablePool(newPool *accountpool
 	}
 }
 
-func (f *AccountPoolInformerFactory) accountsExistInPool(pool *accountpool.AccountPool) bool {
+func (f *AccountPoolControllerFactory) accountsExistInPool(pool *accountpool.AccountPool) bool {
 	lableSelector := fmt.Sprintf("pool_name=%v", pool.Name)
 	accountList, err := f.awsaccountclientset.
 		AccountpooloperatorV1().

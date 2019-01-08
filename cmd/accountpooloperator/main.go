@@ -71,7 +71,7 @@ func main() {
 	// Create the controller and run - this call is non-blocking
 	accountControllerFactory.CreateControllerAndRun()
 
-	accountPoolInformerFactory, err := controllers.NewAccountPoolInformerFactory(
+	accountPoolControllerFactory, err := controllers.NewAccountPoolControllerFactory(
 		config,
 		stopCh)
 	if err != nil {
@@ -79,7 +79,7 @@ func main() {
 	}
 
 	// Create the controller and run - this call is non-blocking
-	accountPoolInformerFactory.CreateInformerAndRun()
+	accountPoolControllerFactory.CreateControllerAndRun()
 
 	<-stopCh
 }
