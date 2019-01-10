@@ -40,10 +40,13 @@ var (
 	pollAWSPeriod = time.Minute * 10
 )
 
+// AWSAccountProvisioner provisions new AWS accounts.
 type AWSAccountProvisioner struct {
 	Config *rest.Config
 }
 
+// ProvisionAccount provisions a new AWS account it then start two goroutines one to check the status of the
+// newly provisioned account as well as another for reporting any errors.
 func (a *AWSAccountProvisioner) ProvisionAccount(
 	account *accountpool.AWSAccount,
 	creds corev1.LocalObjectReference,
@@ -179,6 +182,7 @@ func (a *AWSAccountProvisioner) updateAccountStatus(
 	}
 }
 
+// AWSErr handles for AWS errors.
 func (a *AWSAccountProvisioner) AWSErr(err error, errCh chan<- error) {
 	if aerr, ok := err.(awserr.Error); ok {
 		switch aerr.Code() {
@@ -222,7 +226,7 @@ func (a *AWSAccountProvisioner) handleErrors(
 				return
 			}
 			// TODO: Possibly contact SRE-P team here to check the error
-			log.Printf("Some error occured while trying to create account %v: %v\n", account.Name, err)
+			log.Printf("Some error occurred while trying to create account %v: %v\n", account.Name, err)
 		case <-stopCh:
 			return
 		}

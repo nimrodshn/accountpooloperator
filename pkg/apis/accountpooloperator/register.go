@@ -17,5 +17,6 @@ limitations under the License.
 package accountpooloperator
 
 const (
+	// GroupName is the api group name.
 	GroupName = "accountpooloperator.openshift.io"
 )

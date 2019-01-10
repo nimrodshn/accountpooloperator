@@ -143,7 +143,7 @@ func (c *AWSAccountController) reconcileAccounts(new interface{}) {
 
 	// List the available accounts in the pool of the updated account -
 	// We need to check if updating the account resulted with
-	// insufficiant available account in the pool.
+	// insufficient available account in the pool.
 	poolName := account.Labels["pool_name"]
 	availabelSelector := fmt.Sprintf("pool_name = %v, available = true", poolName)
 	availableAccounts, err := c.awsaccountclientset.

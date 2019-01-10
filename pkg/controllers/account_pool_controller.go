@@ -115,7 +115,7 @@ func (f *AccountPoolControllerFactory) accountsExistInPool(pool *accountpool.Acc
 				LabelSelector: lableSelector,
 			})
 	if err != nil {
-		glog.Errorf("An error occured trying to fetch account list")
+		glog.Errorf("An error occurred trying to fetch account list")
 		return false
 	}
 	if len(accountList.Items) > 0 {
@@ -134,7 +134,7 @@ func (f *AccountPoolControllerFactory) deleteAssociatedAccounts(pool *accountpoo
 				LabelSelector: lableSelector,
 			})
 	if err != nil {
-		glog.Errorf("An error occured trying to fetch account list")
+		glog.Errorf("An error occurred trying to fetch account list")
 		return
 	}
 	for _, account := range accountList.Items {
@@ -142,7 +142,7 @@ func (f *AccountPoolControllerFactory) deleteAssociatedAccounts(pool *accountpoo
 			AWSAccounts(account.Namespace).
 			Delete(account.Name, &metav1.DeleteOptions{})
 		if err != nil {
-			glog.Errorf("An error occured trying to delete account %s", account.Name)
+			glog.Errorf("An error occurred trying to delete account %s", account.Name)
 			return
 		}
 	}
